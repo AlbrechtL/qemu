@@ -1,3 +1,14 @@
-Read the documentation in qemu-doc.html or on http://wiki.qemu.org
+==== QEMU 1.4.0 Fork ====
 
+This QEMU fork included the usermode NPTL support patch and disable epoll syscalls patch.
+Read this thread: https://forum.winehq.org/viewtopic.php?f=8&t=17701&start=25#p84325
+
+With this QEMU version you can try to run x86 Windows programs on a Raspberry Pi.
+
+Compile it direct on a Raspberry Pi with the following commands
+# ./configure --target-list=i386-linux-user --static
+# make -j 4
+
+Read the documentation in qemu-doc.html or on http://wiki.qemu.org
 - QEMU team
+
