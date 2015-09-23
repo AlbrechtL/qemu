@@ -3891,6 +3891,7 @@ TARGET_ABI_DIR=""
 
 case "$target_arch2" in
   i386)
+    target_nptl="yes"
   ;;
   x86_64)
     TARGET_BASE_ARCH=i386

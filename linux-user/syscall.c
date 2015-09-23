@@ -4253,6 +4253,14 @@ static abi_long do_get_thread_area(CPUX86State *env, abi_ulong ptr)
     unlock_user_struct(target_ldt_info, ptr, 1);
     return 0;
 }
+
+static inline void cpu_set_tls(CPUX86State *env, target_ulong newtls)
+{
+    do_set_thread_area(env, newtls);
+    /* reload gs */
+    cpu_x86_load_seg(env, R_GS, env->segs[R_GS].selector);
+}
+
 #endif /* TARGET_I386 && TARGET_ABI32 */
 
 #ifndef TARGET_ABI32
@@ -4378,8 +4386,17 @@ static int do_fork(CPUArchState *env, unsigned int flags, abi_ulong newsp,
         init_task_state(ts);
         /* we create a new CPU instance. */
         new_env = cpu_copy(env);
-#if defined(TARGET_I386) || defined(TARGET_SPARC) || defined(TARGET_PPC)
-        cpu_reset(ENV_GET_CPU(new_env));
+#if defined(TARGET_I386)
+        new_env->idt.base = target_mmap(0, sizeof(uint64_t) * (env->idt.limit + 1),
+                PROT_READ|PROT_WRITE,
+                MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+        memcpy(g2h(new_env->idt.base), g2h(env->idt.base), sizeof(uint64_t) * (env->idt.limit + 1));
+        new_env->gdt.base = target_mmap(0, sizeof(uint64_t) * TARGET_GDT_ENTRIES,
+                PROT_READ|PROT_WRITE,
+                MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+        memcpy(g2h(new_env->gdt.base), g2h(env->gdt.base), sizeof(uint64_t) * TARGET_GDT_ENTRIES);
+#elif defined(TARGET_SPARC) || defined(TARGET_PPC)
+         cpu_reset(ENV_GET_CPU(new_env));
 #endif
         /* Init regs that differ from the parent.  */
         cpu_clone_regs(new_env, newsp);
@@ -8771,7 +8788,7 @@ abi_long do_syscall(void *cpu_env, int num, abi_long arg1,
         break;
 #endif
 #endif
-#if defined(CONFIG_EPOLL)
+#if 0 //#if defined(CONFIG_EPOLL)
 #if defined(TARGET_NR_epoll_create)
     case TARGET_NR_epoll_create:
         ret = get_errno(epoll_create(arg1));
